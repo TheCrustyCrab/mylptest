@@ -8,6 +8,8 @@
 
   <ItemGroup>
     <PackageReference Include="Highs.Native" Version="1.7.1" />
+    <PackageReference Include="LpSolveDotNet.Native.linux-x64" Version="4.0.0" />
+    <PackageReference Include="LpSolveDotNet.Native.win-x64" Version="4.0.0" />
   </ItemGroup>
 
 </Project>

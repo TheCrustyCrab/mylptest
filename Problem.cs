@@ -8,7 +8,7 @@ namespace LPApi
         Max = 1
     }
 
-    public class Problem
+    public class TableProblem
     {
         private const double _negInf = -1e30;
         private const double _posInf = 1e30;
@@ -17,7 +17,7 @@ namespace LPApi
         public double?[][] Rows { get; set; }
         public double[] VarCosts { get; set; }
 
-        public Problem()
+        public TableProblem()
         {
             Rows = [];
             VarCosts = [];
@@ -93,5 +93,10 @@ namespace LPApi
 
             return new HighsModel(cc, cl, cu, rl, ru, astart, aindex, avalue, null, offset, a_format, sense);
         }
+    }
+
+    public class MPSProblem(string data)
+    {
+        public string Data { get; set; } = data;
     }
 }
