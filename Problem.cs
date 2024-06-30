@@ -1,4 +1,5 @@
 ﻿using Highs2;
+using LpSolveDotNet;
 
 namespace LPApi
 {
@@ -92,6 +93,75 @@ namespace LPApi
             HighsMatrixFormat a_format = HighsMatrixFormat.kColwise;
 
             return new HighsModel(cc, cl, cu, rl, ru, astart, aindex, avalue, null, offset, a_format, sense);
+        }
+
+        public LpSolve ToLpSolve()
+        {
+            var varCount = VarCosts.Length;
+
+            double[] cc = VarCosts; // col cost: coefficients in objective function
+
+            var singleVarRows = new List<double?[]>(); // useful for col bounds
+            var multiVarRows = new List<double?[]>(); // constraints
+            foreach (var row in Rows)
+            {
+                if (row.Skip(1).Take(varCount).Count(value => value.HasValue) == 1) // skip L and U
+                    singleVarRows.Add(row);
+                else
+                    multiVarRows.Add(row);
+            }
+
+            var lpSolve = LpSolve.make_lp(multiVarRows.Count, varCount);
+
+            for (var i = 0; i < varCount; i++)
+            {
+                var lowerBound =
+                    singleVarRows
+                        .Where(singleVarRow => singleVarRow[i + 1].HasValue) // skip L
+                        .Select(singleVarRow => singleVarRow.First() / singleVarRow[i + 1]!.Value) // it's possible to provide a value different from 1, so divide
+                        .Where(value => value.HasValue)
+                        .Min();
+
+                if (lowerBound.HasValue)
+                    lpSolve.set_lowbo(i + 1, lowerBound.Value);
+
+                var upperBound =
+                    singleVarRows
+                        .Where(singleVarRow => singleVarRow[i + 1].HasValue) // skip L
+                        .Select(singleVarRow => singleVarRow.Last() / singleVarRow[i + 1]!.Value) // it's possible to provide a value different from 1, so divide
+                        .Where(value => value.HasValue)
+                        .Max();
+
+                if (upperBound.HasValue)
+                    lpSolve.set_upbo(i + 1, upperBound.Value);
+            }
+
+            foreach (var row in multiVarRows)
+            {
+                var indexList = new List<int>();
+                var valueList = new List<double>();
+                for (var i = 1; i <= varCount; i++)
+                {
+                    var value = row[i];
+                    if (!value.HasValue)
+                        continue;
+
+                    indexList.Add(i);
+                    valueList.Add(value.Value);
+                }
+
+                var lowerBound = row.First();
+                var upperBound = row.Last();
+                if (lowerBound.HasValue)
+                    lpSolve.add_constraintex(indexList.Count, [.. valueList], [.. indexList], lpsolve_constr_types.GE, lowerBound.Value);
+                if (upperBound.HasValue)
+                    lpSolve.add_constraintex(indexList.Count, [.. valueList], [.. indexList], lpsolve_constr_types.LE, upperBound.Value);
+            }
+
+            lpSolve.set_sense(maximize: Direction == Direction.Max);
+            lpSolve.set_obj_fnex(varCount, VarCosts, VarCosts.Select((_, index) => index + 1).ToArray());
+
+            return lpSolve;
         }
     }
 

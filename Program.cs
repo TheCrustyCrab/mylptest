@@ -42,9 +42,15 @@ app.MapPost("/{solver}/table", (Solver solver, TableProblem problem) =>
             }
         case Solver.lpsolve:
             {
-                // todo
+                using var lpSolver = problem.ToLpSolve();
+                var status = lpSolver.solve();
+                var varCount = problem.VarCosts.Length;
+                var varCosts = new double[varCount];
+                lpSolver.get_variables(varCosts);
+                var objectiveValue = lpSolver.get_objective();
                 watch.Stop();
-                return Results.BadRequest();
+                var result = new CalculationResult(watch.ElapsedMilliseconds, status == lpsolve_return.OPTIMAL, varCosts, objectiveValue);
+                return Results.Ok(result);
             }
     }
     
@@ -73,7 +79,7 @@ app.MapPost("/{solver}/mps", (Solver solver, MPSProblem problem) =>
             }
         case Solver.lpsolve:
             {
-                using var lpSolver = LpSolve.read_MPS(tempFile.Name, lpsolve_verbosity.NORMAL, lpsolve_mps_options.MPS_FIXED);
+                using var lpSolver = LpSolve.read_MPS(tempFile.Name, lpsolve_verbosity.NORMAL, lpsolve_mps_options.MPS_FREE);
                 if (lpSolver == null)
                     return Results.BadRequest();
                 var status = lpSolver.solve();
