@@ -49,14 +49,14 @@ namespace LPApi
                         .Where(singleVarRow => singleVarRow[i + 1].HasValue) // skip L
                         .Select(singleVarRow => singleVarRow.First() / singleVarRow[i + 1]!.Value) // it's possible to provide a value different from 1, so divide
                         .Where(value => value.HasValue)
-                        .Min();
+                        .Max();
                 colLowerBounds.Add(lowerBound ?? _negInf);
                 var upperBound = 
                     singleVarRows
                         .Where(singleVarRow => singleVarRow[i + 1].HasValue) // skip L
                         .Select(singleVarRow => singleVarRow.Last() / singleVarRow[i + 1]!.Value) // it's possible to provide a value different from 1, so divide
                         .Where(value => value.HasValue)
-                        .Max();
+                        .Min();
                 colUpperBounds.Add(upperBound ?? _posInf);
             }
             double[] cl = [.. colLowerBounds]; // col lower
@@ -120,7 +120,7 @@ namespace LPApi
                         .Where(singleVarRow => singleVarRow[i + 1].HasValue) // skip L
                         .Select(singleVarRow => singleVarRow.First() / singleVarRow[i + 1]!.Value) // it's possible to provide a value different from 1, so divide
                         .Where(value => value.HasValue)
-                        .Min();
+                        .Max();
 
                 if (lowerBound.HasValue)
                     lpSolve.set_lowbo(i + 1, lowerBound.Value);
@@ -130,7 +130,7 @@ namespace LPApi
                         .Where(singleVarRow => singleVarRow[i + 1].HasValue) // skip L
                         .Select(singleVarRow => singleVarRow.Last() / singleVarRow[i + 1]!.Value) // it's possible to provide a value different from 1, so divide
                         .Where(value => value.HasValue)
-                        .Max();
+                        .Min();
 
                 if (upperBound.HasValue)
                     lpSolve.set_upbo(i + 1, upperBound.Value);
